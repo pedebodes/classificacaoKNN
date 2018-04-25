@@ -1,0 +1,8 @@
+### Links ####
+
+#dependencias
+https://github.com/pybrain/pybrain/wiki/Dependencies
+
+#Instalação pybrain
+https://github.com/pybrain/pybrain
+
