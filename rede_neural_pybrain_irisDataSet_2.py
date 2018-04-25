@@ -1,77 +1,63 @@
-#carregando dados do iris dataset com sklearn
 from sklearn import datasets
 from pybrain.datasets.classification import ClassificationDataSet
 from pybrain.tools.shortcuts import buildNetwork
-from pybrain.supervised import BackpropTrainer
+from pybrain.supervised.trainers import BackpropTrainer
 
 iris = datasets.load_iris()
-#obtendo entradas e saidas
-x, y = iris.data, iris.target
+X, y = iris.data, iris.target
+dataset = ClassificationDataSet(4, 1, nb_classes=3)
+for i in range(len(X)):
+    dataset.addSample(X[i], y[i])
 
-dataset = ClassificationDataSet(4, 1, nb_classes=3)# nb_classes=3 (setosa,virginica,versicolor)
-#adicionando amostras
-for i in range(len(x)):
-    dataset.addSample(x[i], y[i])
-
-#particionando os dados para treinamento
 train_data_temp, part_data_temp = dataset.splitWithProportion(0.6)
-teste_data_temp, val_data_temp = part_data_temp.splitWithProportion(0.5)
+test_data_temp, val_data_temp = part_data_temp.splitWithProportion(0.5)
 
-print(type(train_data_temp)) 
+train_data = ClassificationDataSet(4, 1, nb_classes=3)
+for n in range(train_data_temp.getLength()):
+    train_data.addSample(train_data_temp.getSample(
+        n)[0], train_data_temp.getSample(n)[1])
 
-#converter para o tipo para classificationDatase
-train_data = ClassificationDataSet(4,1,nb_classes=3)
-for i in range(train_data_temp.getLength()):
-    train_data.addSample(train_data_temp.getSample(i)[0], train_data_temp.getSample(i)[1])
-print(type(train_data))
-
-#repetir o mesmo para os demais
-teste_data = ClassificationDataSet(4, 1, nb_classes=3)
-for i in range(teste_data_temp.getLength()):
-    teste_data.addSample(teste_data_temp.getSample(i)[0], teste_data_temp.getSample(i)[1])
+test_data = ClassificationDataSet(4, 1, nb_classes=3)
+for n in range(test_data_temp.getLength()):
+    test_data.addSample(test_data_temp.getSample(
+        n)[0], test_data_temp.getSample(n)[1])
 
 val_data = ClassificationDataSet(4, 1, nb_classes=3)
-for i in range(val_data_temp.getLength()):
-    teste_data.addSample(val_data_temp.getSample(i)[0], val_data_temp.getSample(i)[1])
+for n in range(val_data_temp.getLength()):
+    val_data.addSample(val_data_temp.getSample(
+        n)[0], val_data_temp.getSample(n)[1])
 
-print('==============================================')
-#==============================================
-#altera a saida de 0 ou 1 para (001, 100, 010 ,etc)
-print("Antes de converter _convertToOneOfMany .... ")
+print('Antes do _convertToOneOfMany...')
 print(train_data['target'][:5])
 
-val_data._convertToOneOfMany()
 train_data._convertToOneOfMany()
-teste_data._convertToOneOfMany()
+test_data._convertToOneOfMany()
+val_data._convertToOneOfMany()
 
-
-print("Depois de converter _convertToOneOfMany .... ")
+print('Depois do _convertToOneOfMany...')
 print(train_data['target'][:5])
-#==============================================
-print('==============================================')
 
+print('-------------------------------------------')
 
-#criando a rede
 from pybrain.structure.modules import SoftmaxLayer
 
-rede = buildNetwork(train_data.indim, 5, train_data.outdim, outclass=SoftmaxLayer)
-trainer = BackpropTrainer(rede,dataset=train_data,learningrate=0.01,momentum=0.1)
-#treinando
-trainer.trainOnDataset(train_data,100)
+net = buildNetwork(4, 5, 3, outclass=SoftmaxLayer)
+trainer = BackpropTrainer(net, dataset=train_data,
+                          learningrate=0.01, momentum=0.5)
+trainer.trainOnDataset(train_data, 100)
 
-
-#taxa de erro
 from pybrain.utilities import percentError
-out = rede.activateOnDataset(teste_data).argmax(axis=1)
-print("Erro de teste %d " % percentError(out,teste_data['class']))
+
+out = net.activateOnDataset(test_data).argmax(axis=1)
+print('Erro de teste: %f' % percentError(out, test_data['class']))
 
 import numpy
-#verificar erro de validação
-out = rede.activateOnDataset(val_data).argmax(axis=1)
+
+out = net.activateOnDataset(val_data).argmax(axis=1)
 print('Erro de validação: %f' % percentError(out, val_data['class']))
 
+print('-------------------------------------------')
 
-print("validação")
-print("Saida da rede \t",out)
-print("Correto rede \t",val_data['class'][:,0])
-
+print('Validação')
+print('saída da rede:\t', out)
+print('correto:\t', val_data['class'][:, 0])
